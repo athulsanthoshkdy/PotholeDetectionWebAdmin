@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pothole Detection Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=API_KEY&libraries=visualization"></script>
+    <link rel="stylesheet" href="admin-styles.css">
+</head>
+<body>
+    <!-- Login/Register Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-form">
+            <div class="login-header">
+                <i class="fas fa-shield-alt"></i>
+                <h1 id="authTitle">Admin Dashboard</h1>
+                <p>Pothole Detection System</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+                <p class="switch-auth">
+                    Don't have an account? 
+                    <a href="#" id="showRegister">Register here</a>
+                </p>
+            </form>
+
+            <!-- Registration Form -->
+            <form id="registerForm" class="auth-form hidden">
+                <div class="form-group">
+                    <label for="registerName">Full Name</label>
+                    <input type="text" id="registerName" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" placeholder="Create password (min 6 chars)" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i>
+                    Register
+                </button>
+                <p class="switch-auth">
+                    Already have an account? 
+                    <a href="#" id="showLogin">Sign in here</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Access Denied Screen -->
+    <div id="accessDenied" class="login-container hidden">
+        <div class="login-form">
+            <div class="access-denied-content">
+                <i class="fas fa-lock" style="font-size: 4rem; color: var(--error-color); margin-bottom: 1rem;"></i>
+                <h2>Access Denied</h2>
+                <p>You don't have admin privileges to access this dashboard.</p>
+                <p>Please contact an administrator to grant you access.</p>
+                <div class="user-info">
+                    <p><strong>Your Account:</strong> <span id="userEmailDisplay"></span></p>
+                    <p><strong>Status:</strong> <span class="status-badge status-user">Regular User</span></p>
+                </div>
+                <button id="logoutDenied" class="btn btn-outline">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="dashboard-container hidden">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1><i class="fas fa-road"></i> Pothole Detection Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <span class="admin-name">Welcome, <span id="adminNameDisplay">Admin</span></span>
+                <span class="admin-role">
+                    <i class="fas fa-crown"></i>
+                    Administrator
+                </span>
+                <button id="logoutBtn" class="btn btn-outline">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="dashboard-nav">
+            <button class="nav-btn active" data-tab="overview">
+                <i class="fas fa-tachometer-alt"></i>
+                Overview
+            </button>
+            <button class="nav-btn" data-tab="map">
+                <i class="fas fa-map"></i>
+                Map View
+            </button>
+            <button class="nav-btn" data-tab="data">
+                <i class="fas fa-database"></i>
+                Data Table
+            </button>
+            <button class="nav-btn" data-tab="analytics">
+                <i class="fas fa-chart-bar"></i>
+                Analytics
+            </button>
+            <button class="nav-btn" data-tab="users">
+                <i class="fas fa-users-cog"></i>
+                User Management
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalPotholes">0</h3>
+                            <p>Total Potholes</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="activeUsers">0</h3>
+                            <p>Active Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="todayDetections">0</h3>
+                            <p>Today's Detections</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="avgConfidence">0%</h3>
+                            <p>Avg Confidence</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Daily Detections</h3>
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Confidence Distribution</h3>
+                        <canvas id="confidenceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Detections -->
+                <div class="recent-detections">
+                    <h3>Recent Detections</h3>
+                    <div class="detections-list" id="recentDetections">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Tab -->
+            <div id="map" class="tab-content">
+                <div class="map-controls">
+                    <div class="control-group">
+                        <label>Filter by Date:</label>
+                        <input type="date" id="mapDateFilter">
+                    </div>
+                    <div class="control-group">
+                        <label>Min Confidence:</label>
+                        <input type="range" id="confidenceFilter" min="0" max="100" value="0">
+                        <span id="confidenceValue">0%</span>
+                    </div>
+                    <button id="resetMapFilters" class="btn btn-outline">Reset Filters</button>
+                </div>
+                <div id="mapContainer" class="map-container">
+                    <!-- Google Map will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Data Table Tab -->
+            <div id="data" class="tab-content">
+                <div class="table-controls">
+                    <div class="control-group">
+                        <input type="text" id="searchInput" placeholder="Search potholes...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="control-group">
+                        <select id="sortSelect">
+                            <option value="timestamp">Sort by Date</option>
+                            <option value="confidence">Sort by Confidence</option>
+                            <option value="user_id">Sort by User</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button id="exportCSV" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Export CSV
+                        </button>
+                        <button id="exportJSON" class="btn btn-outline">
+                            <i class="fas fa-download"></i>
+                            Export JSON
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="potholeTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date/Time</th>
+                                <th>Location</th>
+                                <th>Confidence</th>
+                                <th>Speed</th>
+                                <th>User</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="potholeTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button id="prevPage" class="btn btn-outline">Previous</button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button id="nextPage" class="btn btn-outline">Next</button>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics" class="tab-content">
+                <div class="analytics-grid">
+                    <div class="chart-container">
+                        <h3>Detection Trends</h3>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Hotspot Areas</h3>
+                        <canvas id="hotspotChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>User Activity</h3>
+                        <canvas id="userChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Speed Analysis</h3>
+                        <canvas id="speedChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management Tab -->
+            <div id="users" class="tab-content">
+                <div class="user-management">
+                    <div class="section-header">
+                        <h2>User Management</h2>
+                        <p>Manage user roles and permissions</p>
+                    </div>
+
+                    <div class="users-grid">
+                        <div class="users-stats">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="totalRegisteredUsers">0</h3>
+                                    <p>Total Users</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-crown"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="totalAdmins">0</h3>
+                                    <p>Administrators</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="totalRegularUsers">0</h3>
+                                    <p>Regular Users</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="users-table">
+                            <div class="table-controls">
+                                <div class="control-group">
+                                    <input type="text" id="userSearchInput" placeholder="Search users...">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="control-group">
+                                    <select id="roleFilter">
+                                        <option value="all">All Roles</option>
+                                        <option value="admin">Administrators</option>
+                                        <option value="user">Regular Users</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Joined</th>
+                                            <th>Last Active</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTableBody">
+                                        <!-- Will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <p>Loading data...</p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            updateProfile 
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            addDoc, 
+            deleteDoc, 
+            doc, 
+            query, 
+            orderBy, 
+            where, 
+            limit, 
+            onSnapshot,
+            updateDoc,
+            getDoc,
+            setDoc 
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+        // Make Firebase available globally
+        window.Firebase = {
+            initializeApp,
+            getAuth,
+            getFirestore,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            updateProfile,
+            collection,
+            getDocs,
+            addDoc,
+            deleteDoc,
+            doc,
+            query,
+            orderBy,
+            where,
+            limit,
+            onSnapshot,
+            updateDoc,
+            getDoc,
+            setDoc
+        };
+
+        // Initialize Firebase after modules are loaded
+        window.dispatchEvent(new Event('firebaseLoaded'));
+    </script>
+    <script src="firebase-admin-service.js"></script>
+    <script src="admin-dashboard.js"></script>
+</body>
+</html>

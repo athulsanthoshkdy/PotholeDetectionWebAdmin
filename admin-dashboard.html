@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pothole Detection Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization"></script>
+    <link rel="stylesheet" href="admin-styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-form">
+            <div class="login-header">
+                <i class="fas fa-shield-alt"></i>
+                <h1>Admin Dashboard</h1>
+                <p>Pothole Detection System</p>
+            </div>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminEmail">Admin Email</label>
+                    <input type="email" id="adminEmail" placeholder="admin@potholedetect.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+                <p class="demo-credentials">
+                    Demo: admin@example.com / admin123
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="dashboard-container hidden">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1><i class="fas fa-road"></i> Pothole Detection Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <span class="admin-name">Welcome, Admin</span>
+                <button id="logoutBtn" class="btn btn-outline">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="dashboard-nav">
+            <button class="nav-btn active" data-tab="overview">
+                <i class="fas fa-tachometer-alt"></i>
+                Overview
+            </button>
+            <button class="nav-btn" data-tab="map">
+                <i class="fas fa-map"></i>
+                Map View
+            </button>
+            <button class="nav-btn" data-tab="data">
+                <i class="fas fa-database"></i>
+                Data Table
+            </button>
+            <button class="nav-btn" data-tab="analytics">
+                <i class="fas fa-chart-bar"></i>
+                Analytics
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalPotholes">0</h3>
+                            <p>Total Potholes</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="activeUsers">0</h3>
+                            <p>Active Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="todayDetections">0</h3>
+                            <p>Today's Detections</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="avgConfidence">0%</h3>
+                            <p>Avg Confidence</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Daily Detections</h3>
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Confidence Distribution</h3>
+                        <canvas id="confidenceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Detections -->
+                <div class="recent-detections">
+                    <h3>Recent Detections</h3>
+                    <div class="detections-list" id="recentDetections">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Tab -->
+            <div id="map" class="tab-content">
+                <div class="map-controls">
+                    <div class="control-group">
+                        <label>Filter by Date:</label>
+                        <input type="date" id="mapDateFilter">
+                    </div>
+                    <div class="control-group">
+                        <label>Min Confidence:</label>
+                        <input type="range" id="confidenceFilter" min="0" max="100" value="0">
+                        <span id="confidenceValue">0%</span>
+                    </div>
+                    <button id="resetMapFilters" class="btn btn-outline">Reset Filters</button>
+                </div>
+                <div id="mapContainer" class="map-container">
+                    <!-- Google Map will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Data Table Tab -->
+            <div id="data" class="tab-content">
+                <div class="table-controls">
+                    <div class="control-group">
+                        <input type="text" id="searchInput" placeholder="Search potholes...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="control-group">
+                        <select id="sortSelect">
+                            <option value="timestamp">Sort by Date</option>
+                            <option value="confidence">Sort by Confidence</option>
+                            <option value="user_id">Sort by User</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button id="exportCSV" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Export CSV
+                        </button>
+                        <button id="exportJSON" class="btn btn-outline">
+                            <i class="fas fa-download"></i>
+                            Export JSON
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="potholeTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date/Time</th>
+                                <th>Location</th>
+                                <th>Confidence</th>
+                                <th>Speed</th>
+                                <th>User</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="potholeTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button id="prevPage" class="btn btn-outline">Previous</button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button id="nextPage" class="btn btn-outline">Next</button>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics" class="tab-content">
+                <div class="analytics-grid">
+                    <div class="chart-container">
+                        <h3>Detection Trends</h3>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Hotspot Areas</h3>
+                        <canvas id="hotspotChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>User Activity</h3>
+                        <canvas id="userChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Speed Analysis</h3>
+                        <canvas id="speedChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <p>Loading data...</p>
+    </div>
+
+    <script src="admin-dashboard.js"></script>
+</body>
+</html>

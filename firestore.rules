@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - users can only read/write their own document
+    match /users/{userId} {
+      // Users can read and write their own user document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Admins can read all user documents (for user management)
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+      // Admins can update user roles (for promoting/demoting users)
+      allow update: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+        // Only allow changing specific fields
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'updatedAt']);
+    }
+
+    // Potholes collection
+    match /potholes/{potholeId} {
+      // Anyone authenticated can read potholes (for admin dashboard)
+      allow read: if request.auth != null;
+
+      // Only authenticated users can create potholes (from mobile app)
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.user_id;
+
+      // Only the creator or admins can update potholes
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.user_id ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+
+      // Only admins can delete potholes
+      allow delete: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Admin-specific collections (for future use)
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // System collections (for app configuration, etc.)
+    match /system/{document=**} {
+      // Only admins can modify system settings
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}
